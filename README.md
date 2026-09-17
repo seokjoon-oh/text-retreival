@@ -62,20 +62,22 @@ Top-5 Results
 
 ### 4. 검색 옵션
 
-| 입력 예시 | 기능 |
+아래 입력은 검색 문법을 설명하기 위한 일반형 예시입니다.
+
+| 입력 형식 | 기능 |
 | --- | --- |
-| `motor` | 기본 검색 |
-| `[AND]motor sensor` | 모든 검색어가 포함된 문서 검색 |
-| `[PHRASE]temperature sensor` | Title에서 정확 구문 검색 |
-| `[FIELD=T]motor` | Title만 검색 |
-| `[FIELD=A]motor` | Abstract만 검색 |
-| `[FIELD=C]motor` | Claims만 검색 |
-| `[VERBOSE]motor sensor` | 검색어가 포함된 문맥 출력 |
+| `<검색어>` | 기본 검색 |
+| `[AND]<검색어1> <검색어2>` | 모든 검색어가 포함된 문서 검색 |
+| `[PHRASE]<검색 구문>` | Title에서 정확 구문 검색 |
+| `[FIELD=T]<검색어>` | Title만 검색 |
+| `[FIELD=A]<검색어>` | Abstract만 검색 |
+| `[FIELD=C]<검색어>` | Claims만 검색 |
+| `[VERBOSE]<검색어1> <검색어2>` | 검색어가 포함된 문맥 출력 |
 
 `AND`, `FIELD`, `VERBOSE`는 함께 사용할 수 있습니다.
 
 ```text
-[VERBOSE][AND][FIELD=A]motor sensor
+[VERBOSE][AND][FIELD=A]<검색어1> <검색어2>
 ```
 
 `PHRASE` 검색은 별도로 사용하며 `AND`와 동시에 사용하지 않습니다.
@@ -148,7 +150,7 @@ python main.py search
 검색어를 한 번만 입력해 실행할 수도 있습니다.
 
 ```bash
-python main.py search "[VERBOSE][AND]sensor measurement"
+python main.py search "[VERBOSE][AND]<검색어1> <검색어2>"
 ```
 
 ## 파일 구성
