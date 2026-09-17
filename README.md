@@ -1,77 +1,97 @@
-# Patent Text Retrieval Engine
+# Text Retrieval Search Engine
 
-기계·재료·화공 분야의 특허 JSON 문서를 대상으로 직접 색인하고 검색하는 Python 기반 정보검색(Text Retrieval) 프로젝트입니다.
+JSON 문서를 직접 색인하고 검색할 수 있도록 구현한 Python 기반 검색엔진입니다.
 
-형태소 분석을 통해 검색어와 문서를 정규화하고, Title / Abstract / Claims 필드별 inverted index를 구축한 뒤 BM25F 기반으로 문서의 관련도를 계산합니다. 단순 키워드 검색뿐 아니라 AND, 정확 구문(PHRASE), 필드 지정, 문맥 출력(VERBOSE)을 지원합니다.
+프로젝트에서는 기계·재료·화공 분야의 특허 문서 1,238건을 데이터셋으로 사용했습니다. Title, Abstract, Claims를 각각 색인하고 Komoran으로 검색에 필요한 용어를 추출했으며, 검색 결과는 BM25F 점수를 기준으로 정렬하도록 구현했습니다.
 
-## Project Overview
+## 구현 내용
 
-- 대상 데이터: 특허 문서 1,238건
-- 고유 용어: 10,306개
-- 전처리: Komoran 형태소 분석기
-- 사용 품사: 일반명사(NNG), 고유명사(NNP), 외국어(SL)
-- 색인 구조: field별 inverted index + binary postings
-- 검색 랭킹: BM25F
-- 검색 필드: Title / Abstract / Claims
-- 결과 출력: 관련도 상위 5개 문서 및 선택적 문맥 하이라이트
+- 특허 JSON 문서 1,238건 색인
+- Komoran을 이용한 NNG / NNP / SL 추출
+- 영문 용어 소문자 정규화
+- 10,306개 고유 term 기반 inverted index 구축
+- Title / Abstract / Claims 필드별 term frequency 저장
+- postings를 binary 파일로 저장
+- BM25F 기반 검색 순위 계산
+- AND / PHRASE / FIELD / VERBOSE 검색 구현
+- 관련도 상위 5개 문서 출력
 
-## Search Pipeline
+## 검색 흐름
 
 ```text
-Patent JSON
+JSON Documents
    ↓
 Komoran Tokenization
 (NNG / NNP / SL)
    ↓
-Field-wise Inverted Index
+Inverted Index
 (Title / Abstract / Claims)
    ↓
 BM25F Scoring
    ↓
-Query Filtering
-(AND / PHRASE / FIELD)
+Query Processing
    ↓
-Top-5 Results + VERBOSE Context
+Top-5 Results
 ```
 
-## Key Features
+## 주요 기능
 
-### 1. Korean / English term extraction
+### 1. 용어 추출
 
-`Komoran`을 이용해 문장에서 NNG, NNP, SL 품사만 추출합니다. 영문 토큰은 소문자로 정규화합니다.
+`Komoran`을 이용해 일반명사(NNG), 고유명사(NNP), 외국어(SL)를 추출합니다. 영문 용어는 소문자로 변환해 대소문자 차이로 같은 단어가 따로 처리되지 않도록 했습니다.
 
-### 2. Field-wise inverted index
+### 2. Inverted Index
 
-각 특허 문서의 다음 필드를 별도로 색인합니다.
+문서의 세 필드를 나누어 색인합니다.
 
-- `T`: invention title
-- `A`: abstract
-- `C`: claims
+- `T`: Title
+- `A`: Abstract
+- `C`: Claims
 
-각 term에 대해 문서 ID와 term frequency를 저장하며, postings는 binary 형식으로 기록합니다.
+각 term에 대해 문서 ID와 term frequency를 저장하고, postings 데이터는 binary 형식으로 관리합니다.
 
-### 3. BM25F ranking
+### 3. BM25F Ranking
 
-Title, Abstract, Claims의 길이와 중요도를 각각 반영하여 BM25F 점수를 계산합니다. 동일한 검색어라도 어느 필드에 등장했는지에 따라 가중치를 다르게 적용합니다.
+검색 결과의 순위는 BM25F를 이용해 계산합니다. Title, Abstract, Claims의 문서 길이를 각각 반영하고 필드별 가중치를 다르게 적용했습니다.
 
-### 4. Query operators
+현재 코드의 필드 가중치는 다음과 같습니다.
 
-| Query | Description |
+- Title: 2.5
+- Abstract: 1.5
+- Claims: 1.1
+
+### 4. 검색 옵션
+
+| 입력 예시 | 기능 |
 | --- | --- |
-| `motor` | 기본 OR 검색 |
-| `[AND]motor sensor` | 모든 검색어가 등장하는 문서만 검색 |
+| `motor` | 기본 검색 |
+| `[AND]motor sensor` | 모든 검색어가 포함된 문서 검색 |
 | `[PHRASE]temperature sensor` | Title에서 정확 구문 검색 |
 | `[FIELD=T]motor` | Title만 검색 |
 | `[FIELD=A]motor` | Abstract만 검색 |
 | `[FIELD=C]motor` | Claims만 검색 |
-| `[VERBOSE]motor sensor` | 검색어가 포함된 문맥과 하이라이트 출력 |
+| `[VERBOSE]motor sensor` | 검색어가 포함된 문맥 출력 |
 
-태그는 조합할 수 있습니다. 예를 들어 `[VERBOSE][AND][FIELD=A]motor sensor`처럼 사용할 수 있습니다. 단, `PHRASE`와 `AND`는 동시에 사용하지 않습니다.
-
-## Project Structure
+`AND`, `FIELD`, `VERBOSE`는 함께 사용할 수 있습니다.
 
 ```text
-text-retreival/
+[VERBOSE][AND][FIELD=A]motor sensor
+```
+
+`PHRASE` 검색은 별도로 사용하며 `AND`와 동시에 사용하지 않습니다.
+
+## 구현 결과
+
+총 1,238건의 특허 문서를 색인했고, 색인 결과 10,306개의 고유 term을 구축했습니다.
+
+검색 시 BM25F 점수를 기준으로 관련도가 높은 상위 5개 문서를 출력하도록 구현했습니다. 기본 검색 외에도 여러 검색어를 모두 포함하는 AND 검색, Title 정확 구문 검색, 특정 필드만 대상으로 하는 검색, 검색어가 실제 문서의 어느 부분에 포함됐는지 확인하는 문맥 출력 기능을 추가했습니다.
+
+별도의 검색 정확도나 처리 속도 비교 실험은 진행하지 않았기 때문에 확인한 구현 결과만 정리했습니다.
+
+## 프로젝트 구조
+
+```text
+text-retrieval/
 ├── main.py
 ├── requirements.txt
 ├── README.md
@@ -83,54 +103,32 @@ text-retreival/
     └── searcher.py
 ```
 
-실행 중 생성되는 `data/`, `index/`, Python cache, IDE 설정 파일은 Git에서 제외합니다.
+## 실행 방법
 
-## Installation
-
-### 1. Clone
+### 1. 저장소 내려받기
 
 ```bash
-git clone https://github.com/seokjoon-oh/text-retreival.git
-cd text-retreival
+git clone https://github.com/seokjoon-oh/text-retrieval.git
+cd text-retrieval
 ```
 
-### 2. Create a virtual environment
-
-```bash
-python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-macOS / Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
+### 2. 패키지 설치
 
 ```bash
 pip install -r requirements.txt
 ```
 
-`Komoran`은 Java 환경을 사용하므로 로컬에 Java/JDK가 설치되어 있어야 합니다.
+`Komoran` 사용을 위해 Java/JDK 환경이 필요합니다.
 
-## Usage
+### 3. 색인 생성
 
-### Build index
-
-원천 특허 JSON이 저장된 디렉터리를 지정합니다.
+원천 JSON 파일이 저장된 디렉터리를 지정합니다.
 
 ```bash
 python main.py index "path/to/patent-json-directory"
 ```
 
-색인 결과는 자동으로 `index/`에 생성됩니다.
+색인 결과는 `index/` 폴더에 생성됩니다.
 
 ```text
 index/
@@ -139,27 +137,27 @@ index/
 └── postings.bin
 ```
 
-### Interactive search
+### 4. 검색
+
+대화형 검색:
 
 ```bash
 python main.py search
 ```
 
-검색어를 입력하고, 빈 줄을 입력하면 종료됩니다.
-
-### One-shot search
+검색어를 한 번만 입력해 실행할 수도 있습니다.
 
 ```bash
 python main.py search "[VERBOSE][AND]sensor measurement"
 ```
 
-## Core Files
+## 파일 구성
 
 - `src/tokenizer.py`: Komoran 기반 term 추출 및 영문 정규화
-- `src/indexer.py`: 특허 JSON 순회, field별 TF 계산, inverted index 및 postings 생성
-- `src/searcher.py`: query parsing, BM25F ranking, AND/PHRASE/FIELD 검색, 문맥 하이라이트
-- `main.py`: indexing/search CLI 진입점
+- `src/indexer.py`: JSON 문서 순회, 필드별 TF 계산, inverted index와 postings 생성
+- `src/searcher.py`: query parsing, BM25F ranking, AND / PHRASE / FIELD 검색 및 문맥 출력
+- `main.py`: 색인과 검색 실행을 위한 CLI
 
-## Notes
+## 참고
 
-원천 특허 데이터와 생성된 index 파일은 저장소에 포함하지 않습니다. `doc_table.json`에는 색인 당시의 로컬 원천 데이터 경로가 저장되므로, 다른 환경에서는 원천 데이터를 준비한 뒤 다시 indexing하는 방식으로 사용합니다.
+원천 데이터와 생성된 index 파일은 저장소에 포함하지 않습니다. `doc_table.json`에는 색인 당시의 원천 데이터 경로가 저장되기 때문에 다른 환경에서 사용할 경우 원천 데이터를 준비한 뒤 다시 색인하면 됩니다.
