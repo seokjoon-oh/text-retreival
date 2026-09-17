@@ -20,7 +20,7 @@ def build_index(data_dir: str) -> None:
         POSTINGS_FILE,
     )
     indexer.build_index()
-    print(f"색인이 완료되었습니다. 색인 결과는 '{INDEX_DIR}'에 저장되었습니다.")
+    print(f"Index 생성이 완료되었습니다. 결과는 '{INDEX_DIR}'에 저장되었습니다.")
 
 
 def run_search(query: str | None = None) -> None:
