@@ -1,9 +1,19 @@
-/data/
-/index/
-__pycache__/
-.vscode/
+# Local data and generated index
+data/
+index/
 
 # Python
-*.pyc
+__pycache__/
+*.py[cod]
 *.pyo
 *.pyd
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
