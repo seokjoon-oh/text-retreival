@@ -92,11 +92,11 @@ Top-5 Results
 
 ### 색인 결과 파일
 
-기존 실험에서 생성한 색인 결과도 저장소에 함께 보관했습니다.
+기존 실험에서 생성한 색인 결과는 소스 코드와 섞이지 않도록 `index_results/` 폴더에 묶어서 보관했습니다.
 
-- `doc_table.json`: 문서 ID, 파일명, 문서 경로, Title / Abstract / Claims 길이 정보
-- `term_dict.json`: term별 document frequency와 postings 위치 정보
-- `postings.bin`: 문서 ID와 term frequency를 저장한 binary postings
+- `index_results/doc_table.json`: 문서 ID, 파일명, 문서 경로, Title / Abstract / Claims 길이 정보
+- `index_results/term_dict.json`: term별 document frequency와 postings 위치 정보
+- `index_results/postings.bin`: 문서 ID와 term frequency를 저장한 binary postings
 
 공개 저장소에 개인 PC 경로가 노출되지 않도록 `doc_table.json`의 `path` 값은 `data/<파일명>` 형태의 상대경로로 정리했습니다. 문서 ID, 파일명, 각 필드 길이 등 색인 결과값은 그대로 유지했습니다.
 
@@ -107,10 +107,11 @@ text-retrieval/
 ├── main.py
 ├── requirements.txt
 ├── README.md
-├── doc_table.json
-├── term_dict.json
-├── postings.bin
 ├── .gitignore
+├── index_results/
+│   ├── doc_table.json
+│   ├── term_dict.json
+│   └── postings.bin
 └── src/
     ├── __init__.py
     ├── tokenizer.py
@@ -172,7 +173,8 @@ python main.py search "[VERBOSE][AND]<검색어1> <검색어2>"
 - `src/indexer.py`: JSON 문서 순회, 필드별 TF 계산, inverted index와 postings 생성
 - `src/searcher.py`: query parsing, BM25F ranking, AND / PHRASE / FIELD 검색 및 문맥 출력
 - `main.py`: 색인과 검색 실행을 위한 CLI
+- `index_results/`: 기존 실험에서 생성한 색인 결과 파일 묶음
 
 ## 참고
 
-원천 특허 JSON 데이터는 저장소에 포함하지 않습니다. 저장소 루트의 `doc_table.json`, `term_dict.json`, `postings.bin`은 기존 실험에서 생성된 색인 결과이며, `doc_table.json`의 개인 로컬 경로만 공개용 상대경로로 정리했습니다. 다른 환경에서 전체 검색 과정을 재현하려면 원천 데이터를 준비한 뒤 다시 색인하면 됩니다.
+원천 특허 JSON 데이터는 저장소에 포함하지 않습니다. `index_results/` 폴더에는 기존 실험에서 생성된 색인 결과를 보관했으며, `doc_table.json`의 개인 로컬 경로만 공개용 상대경로로 정리했습니다. 다른 환경에서 전체 검색 과정을 재현하려면 원천 데이터를 준비한 뒤 다시 색인하면 됩니다.
